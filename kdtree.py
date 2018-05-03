@@ -136,6 +136,8 @@ class Kdtree(object):
     def nearest_neighbor(self, p):
         """Return the coordinates of the nearest neighbor of p in the tree."""
         self.vist_count = 0
+        if not self.root:
+            return None
         return self._nearest_neighbor(self.root, p)
 
     def _nearest_neighbor(self, node, p):
@@ -162,14 +164,44 @@ class Kdtree(object):
                 dist_nearest_global = distance
                 # if the sphere around p with radius of the nearest found neighbor
                 # in branch does not intersect the dividing hyperlane
-                # defined by node.p, the nearest neigher has to be in this branch
+                # defined by node.p, the nearest neighor has to be in this branch
                 if (side == "L" and p[node.dir] + distance <= node.p[node.dir] or
                     side == "R" and p[node.dir] - distance > node.p[node.dir]):
                     return nearest
         return nearest_global
 
-    # def query_radius(self, p, r):
-    #     """Returns all points within r of p."""
+    def query_radius(self, p, r):
+        """Returns all points within r of p."""
+        self.vist_count = 0
+        if not self.root:
+            return []
+        return self._query_radius(self.root, p, r)
+
+    def _query_radius(self, node, p, r):
+        self.vist_count += 1
+
+        points = []
+        if dist(p, node.p) <= r:
+            points.append(node.p)
+        
+        branches = []
+        # go down a branch only if it could contain points within r of p
+        if p[node.dir] + r <= node.p[node.dir]:
+            branches.append(node.left) # only left
+        elif p[node.dir] - r > node.p[node.dir]:
+            branches.append(node.right) # only right
+        else:
+            branches.extend([node.left, node.right]) # both
+
+        for branch in branches:
+            if not branch:
+                continue
+            points.extend(self._query_radius(branch, p, r))
+
+        return points
+
+
+
 
     def __str__(self):
         return str(self.root)
@@ -184,8 +216,11 @@ def check_is_leaf(node, p):
     assert(node.left == None)
     assert(node.right == None)
 
-def get_nearest(points, p):
+def nearest_neighbor(points, p):
     return min(points, key=lambda x: dist(x, p))
+
+def query_radius(points, p, r):
+    return filter(lambda x: dist(x, p) <= r, points)
 
 
 def test_one_point():
@@ -218,13 +253,13 @@ def test_nearest_neighbor():
     ps = list(map(tuple, np.random.uniform(-1, 1, (100, 2))))
     p = (0.5, -0.5)
     tree = Kdtree(ps, 2)
-    assert(tree.nearest_neighbor(p) == get_nearest(ps, p))
+    assert(tree.nearest_neighbor(p) == nearest_neighbor(ps, p))
 
 def test_nearest_neighbor2():
     ps = [(4, 2), (1, 3), (3, 3)] * 3
     p = (1, 3)
     tree = Kdtree(ps, 2)
-    assert(tree.nearest_neighbor(p) == get_nearest(ps, p))
+    assert(tree.nearest_neighbor(p) == nearest_neighbor(ps, p))
 
 def test_add_point_empty():
     tree = Kdtree([], 2)
@@ -280,28 +315,40 @@ def test_remove_multiple():
     tree.remove((1,3))
     check_is_leaf(tree.root.left, (3, 3))
 
+def test_query_radius():
+    ps = list(map(tuple, np.random.uniform(-1, 1, (20, 3))))
+    p = (0, 0)
+    tree = Kdtree(ps, 3)
+    for r in np.linspace(0, 2, 0.1):
+        assert(set(tree.query_radius(p, r)) == set(query_radius(ps, p, r)))
+
 
 if __name__ == "__main__":
-
-    Ns = list(range(1, 600, 2))
+    Ns = list(range(1, 6000, 20))
     counts = []
+    num_points = []
     for N in Ns:
-        p = tuple(np.random.uniform(-1, 1, 3))
-        # p = (0, 0)
-        ps = list(map(tuple, np.random.uniform(-1, 1, (N, 3))))
+        scale = N**(1/3)
+        # p = tuple(np.random.uniform(-1*scale, 1*scale, 3))
+        p = (0, 0, 0)
+        ps = list(map(tuple, np.random.uniform(-1*scale, 1*scale, (N, 3))))
 
         tree = Kdtree(ps, 3)
-        with Timer() as t_tree:
-            nearest_tree = tree.nearest_neighbor(p)
-        with Timer() as t_linear:
-            nearest_linear = get_nearest(ps, p)
-        assert(nearest_tree == nearest_linear)
+        # with Timer() as t_tree:
+        #    nearest_tree = tree.nearest_neighbor(p)
+        # with Timer() as t_linear:
+        #     nearest_linear = nearest_neighbor(ps, p)
+        # assert(nearest_tree == nearest_linear)
 
         # print("tree+search: {:.5f}s, linear: {:.5f}s".format(t_tree.elapsed, t_linear.elapsed))
 
+        res = tree.query_radius(p, 5)
+        num_points.append(len(res))
+        print(len(res))
         counts.append(tree.vist_count)
     
+    # plt.plot(Ns, num_points)
     plt.plot(Ns, Ns)
     plt.plot(Ns, counts)
-    plt.plot(Ns, np.log(Ns))#/np.log(Ns[-1])*counts[-1])
+    plt.plot(Ns, np.log(Ns)/np.log(Ns[-1])*counts[-1])
     plt.show()
