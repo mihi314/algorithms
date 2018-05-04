@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import operator
 from contexttimer import Timer
+from scipy.spatial import KDTree
 
 class Node(object):
     def __init__(self, p, left, right, dir):
@@ -334,21 +335,27 @@ if __name__ == "__main__":
         ps = list(map(tuple, np.random.uniform(-1*scale, 1*scale, (N, 3))))
 
         tree = Kdtree(ps, 3)
-        # with Timer() as t_tree:
-        #    nearest_tree = tree.nearest_neighbor(p)
+        tree2 = KDTree(ps)
+        with Timer() as t_tree:
+            nearest_tree = tree.query_radius(p, 5)
+        with Timer() as t_tree2:
+            nearest_tree2 = tree2.query_ball_point(p, 5)
+        np.testing.assert_array_equal(set(nearest_tree), set(ps[i] for i in nearest_tree2))
         # with Timer() as t_linear:
         #     nearest_linear = nearest_neighbor(ps, p)
         # assert(nearest_tree == nearest_linear)
 
         # print("tree+search: {:.5f}s, linear: {:.5f}s".format(t_tree.elapsed, t_linear.elapsed))
+        print("tree: {:.5f}s, tree2: {:.5f}s".format(t_tree.elapsed, t_tree2.elapsed))
+        print(t_tree2.elapsed/t_tree.elapsed)
 
-        res = tree.query_radius(p, 5)
-        num_points.append(len(res))
-        print(len(res))
-        counts.append(tree.vist_count)
+        # res = tree.query_radius(p, 5)
+        # num_points.append(len(res))
+        # print(len(res))
+        # counts.append(tree.vist_count)
     
     # plt.plot(Ns, num_points)
-    plt.plot(Ns, Ns)
-    plt.plot(Ns, counts)
-    plt.plot(Ns, np.log(Ns)/np.log(Ns[-1])*counts[-1])
-    plt.show()
+    # plt.plot(Ns, Ns)
+    # plt.plot(Ns, counts)
+    # plt.plot(Ns, np.log(Ns)/np.log(Ns[-1])*counts[-1])
+    # plt.show()
