@@ -17,8 +17,8 @@ def peakdet(y, delta):
     if not len(y.shape) == 1:
         raise ValueError("y has to be one-dimensional")
     delta = float(delta)
-    if delta <= 0:
-        raise ValueError("delta must be a positive number")
+    if delta < 0:
+        raise ValueError("delta must be non-negative")
     
     # try starting with search for max peaks or min peaks first
     # take whichever returns more peaks
@@ -46,8 +46,8 @@ def peakdet_wrapped(y, delta):
     if not len(y.shape) == 1:
         raise ValueError("y has to be one-dimensional")
     delta = float(delta)
-    if delta <= 0:
-        raise ValueError("delta must be a positive number")
+    if delta < 0:
+        raise ValueError("delta must be non-negative")
     
     mins1, maxes1, state = _peakdet(y, delta, True)
     # start again from the beginning with the previous state so that peaks wrapped around
