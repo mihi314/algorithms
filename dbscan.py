@@ -1,12 +1,11 @@
 import numpy as np
-# from kdtree import Kdtree
 from scipy.spatial import KDTree
 from sklearn.datasets.samples_generator import make_blobs
 from contexttimer import Timer
 import matplotlib.pyplot as plt
 
 
-def dbscan(points, minPoints, epsilon):
+def dbscan(points, min_points, epsilon):
     """
     Return an array of labels for each point indicating which cluster it belongs to.
     Cluster labels start with index 0. Ouliers have -1.
@@ -25,7 +24,7 @@ def dbscan(points, minPoints, epsilon):
 
         neighbors = kdtree.query_ball_point(p, epsilon)
         neighbors = set(neighbors)
-        if len(neighbors) < minPoints:
+        if len(neighbors) < min_points:
             labels[i] = OUTLIER
             continue
 
@@ -40,7 +39,7 @@ def dbscan(points, minPoints, epsilon):
                 continue
             labels[n] = cluster
             neighbors_inner = kdtree.query_ball_point(points[n], epsilon)
-            if len(neighbors_inner) >= minPoints:
+            if len(neighbors_inner) >= min_points:
                 neighbors.update(neighbors_inner)
         cluster += 1
     return labels
