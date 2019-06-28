@@ -5,25 +5,20 @@ import matplotlib.pyplot as plt
 def peakdet(y, delta):
     """
     Return the indices (indices_min, indices_max) of local maxima and minima
-    ("peaks") in the vector y.
+    ("peaks") in the 1-d array y.
     
     A point is considered a maximum if it locally has the maximal value, and is
     preceded and followed by a value lower by delta.
     Based on http://billauer.co.il/peakdet.html.
     """
-    y = np.asarray(y)
-
-    if not len(y.shape) == 1:
-        raise ValueError("y has to be one-dimensional")
-    delta = float(delta)
     if delta < 0:
         raise ValueError("delta must be non-negative")
     
     # try starting with search for max peaks or min peaks first
     # take whichever returns more peaks
     # todo: could be optimized to not completely go through the array twice
-    mins1, maxes1, _ = _peakdet(y, delta, True)
-    mins2, maxes2, _ = _peakdet(y, delta, False)
+    mins1, maxes1, _ = _peakdet(y, delta, lookformax=True)
+    mins2, maxes2, _ = _peakdet(y, delta, lookformax=False)
     if len(mins1) + len(maxes1) > len(mins2) + len(maxes2):
         return mins1, maxes1
     else:
@@ -33,25 +28,20 @@ def peakdet(y, delta):
 def peakdet_wrapped(y, delta):
     """
     Return the indices (indices_min, indices_max) of local maxima and minima
-    ("peaks") in the vector y. y is interpreted to wrap around the ends, e.g.
-    to be a distribution over angles.
+    ("peaks") in the 1-d array y. y is interpreted to wrap around the ends. For 
+    exámple a distribution over angles.
     
     A point is considered a maximum if it locally has the maximal value, and is
     preceded and followed by a value lower by delta.
     Based on http://billauer.co.il/peakdet.html.
     """
-    y = np.asarray(y)
-
-    if not len(y.shape) == 1:
-        raise ValueError("y has to be one-dimensional")
-    delta = float(delta)
     if delta < 0:
         raise ValueError("delta must be non-negative")
     
-    mins1, maxes1, state = _peakdet(y, delta, True)
+    mins1, maxes1, state = _peakdet(y, delta, lookformax=True)
     # start again from the beginning with the previous state so that peaks wrapped around
     # the ends are now also detected
-    mins2, maxes2, state = _peakdet(y, delta, True, state)
+    mins2, maxes2, state = _peakdet(y, delta, lookformax=True, state=state)
     return mins2, maxes2
 
 
@@ -66,8 +56,8 @@ def _peakdet(y, delta, lookformax, state=None):
     if state:
         mn, mx, mnpos, mxpos, lookformax, first_peak = state
     else:
-        mn, mx = np.Inf, -np.Inf
-        mnpos, mxpos = np.NaN, np.NaN
+        mn, mx = float("inf"), -float("inf")
+        mnpos, mxpos = None, None
         first_peak = True
 
     for i, this in enumerate(y):
@@ -79,7 +69,7 @@ def _peakdet(y, delta, lookformax, state=None):
             mn = this
             mnpos = i
 
-        if lookformax and this < mx-delta:
+        if lookformax and this < mx - delta:
             # we have fallen delta below the current max, this is now a legitimate max,
             # start looking for a min now
             if not first_peak:
@@ -87,7 +77,7 @@ def _peakdet(y, delta, lookformax, state=None):
             mnpos, mn = i, this
             lookformax = False
             first_peak = False
-        elif not lookformax and this > mn+delta:
+        elif not lookformax and this > mn + delta:
             # we have risen delta above the current min, this is now a legitimate min,
             # start looking for a max now
             if not first_peak:
@@ -97,7 +87,7 @@ def _peakdet(y, delta, lookformax, state=None):
             first_peak = False
     
     state = (mn, mx, mnpos, mxpos, lookformax, first_peak)
-    return np.array(indices_min), np.array(indices_max), state
+    return indices_min, indices_max, state
 
 
 def get_testdata(mus):
@@ -132,7 +122,7 @@ def test_wrapped():
 
 if __name__ == "__main__":
     xs, ys = get_testdata([100, 180])
-    # ys += np.random.normal(size=ys.shape)
+    ys += np.random.normal(size=ys.shape)
     mins, maxes = peakdet_wrapped(ys, delta=50)
 
     plt.plot(xs, ys)
