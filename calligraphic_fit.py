@@ -231,8 +231,9 @@ def main():
     data = data[10:-10,1:]
     # x = 0.5584 * x + 12.664
 
-    x_new = calligraphic_fit(data, loopiness=5)
-    plt.plot(*x_new.T)
+    data_loopy = calligraphic_fit(data, loopiness=5)
+    plt.plot(*data_loopy.T)
+    plt.plot(*data.T)
     plt.show()
 
 if __name__ == "__main__":
