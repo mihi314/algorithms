@@ -210,6 +210,7 @@ class Kdtree(object):
 # todos:
 #   consistency check function
 #   k nearest
+#   allow saving an arbitrary value with each point. or at least some kind of index
 
 
 def check_is_leaf(node, p):

@@ -138,7 +138,7 @@ def project_point_onto_line(theta, rho, point):
 def replace_slices(x, slices):
     """
     slices is a list of Slice(i, j, x).
-    Replaces x[slice.i:slice.j] in the orignial x with slice.x, where slice.x does not
+    Replaces x[slice.i:slice.j] in the orignial x with slice.x. slice.x does not
     need to have the same length as the replaced part.
     """
     parts = []
@@ -214,7 +214,7 @@ def calligraphic_fit(points, loopiness):
         
         # extend the loop out from these low-curvature points
         C = line_line_intersect(x[i-1], x[i], x[j], x[j+1])
-        # todo: maybe handle the case when there is no intersect
+        # todo: maybe handle the case when there is no intersection
         loop = loop_the_loop(x[i], x[j], C, LOOP_SIZE)
         slices.append(Slice(i, j+1, loop))
 
